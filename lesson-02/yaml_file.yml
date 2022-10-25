@@ -1,0 +1,9 @@
+list:
+- '1'
+- 2
+- 3.0
+- '5'
+integer: 1
+dict:
+  key1: Кей Уан
+  key2: key2  €

@@ -11,3 +11,20 @@
 # Создать функцию write_to_csv(), в которую передавать ссылку на CSV-файл. В этой функции реализовать получение данных
 # через вызов функции get_data(), а также сохранение подготовленных данных в соответствующий CSV-файл;
 # Проверить работу программы через вызов функции write_to_csv().
+
+import re
+import csv
+
+
+def get_data():
+    pass
+
+def write_to_csv(file):
+    main_data = get_data()
+    csv.writer()
+    pass
+
+if __name__ == '__main__':
+    file_name = 'main_data.csv'
+    with open(file_name, 'w', encoding='utf-8') as f:
+        write_to_csv(f)
