@@ -36,7 +36,7 @@ def append_pattern_data(data, pattern, data_string):
 def get_data():
     files = ['info_1.txt', 'info_2.txt', 'info_3.txt']
     os_prod_list, os_name_list, os_code_list, os_type_list = [], [], [], []
-    main_data = ['Изготовитель системы,Название ОС,Код продукта,Тип системы']
+    main_data = [['Изготовитель системы', 'Название ОС', 'Код продукта', 'Тип системы']]
     for file in files:
         encoding = get_file_encoding(file)
         with open(file, 'r', encoding=encoding) as f:
@@ -47,17 +47,18 @@ def get_data():
             append_pattern_data(os_type_list, 'Тип системы:', data_string)
 
     for idx, data in enumerate(os_prod_list):
-        main_data.append(f'{os_prod_list[idx]},{os_name_list[idx]},{os_code_list[idx]},{os_type_list[idx]}')
+        main_data.append([os_prod_list[idx],os_name_list[idx],os_code_list[idx],os_type_list[idx]])
 
     return main_data
 
 
 def write_to_csv(file):
     main_data = get_data()
+    print(main_data)
     writer = csv.writer(file)
     writer.writerows(main_data)
 
 if __name__ == '__main__':
     file_name = 'main_data.csv'
-    with open(file_name, 'w', encoding='utf-8') as f:
+    with open(file_name, 'w', newline='', encoding='utf-8') as f:
         write_to_csv(f)
