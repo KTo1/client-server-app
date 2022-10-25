@@ -14,15 +14,48 @@
 
 import re
 import csv
+import chardet
+
+
+def get_file_encoding(file_name):
+    encoding = 'utf-8'
+    with open(file_name, 'rb') as f:
+        data = f.read()
+        encoding = chardet.detect(data)['encoding']
+
+    return encoding
+
+
+def append_pattern_data(data, pattern, data_string):
+    strings = re.findall(f'{pattern}.*', data_string)
+    if strings:
+        for string in strings:
+            data.append(string.replace(pattern, '').strip())
 
 
 def get_data():
-    pass
+    files = ['info_1.txt', 'info_2.txt', 'info_3.txt']
+    os_prod_list, os_name_list, os_code_list, os_type_list = [], [], [], []
+    main_data = ['Изготовитель системы,Название ОС,Код продукта,Тип системы']
+    for file in files:
+        encoding = get_file_encoding(file)
+        with open(file, 'r', encoding=encoding) as f:
+            data_string = f.read()
+            append_pattern_data(os_prod_list, 'Изготовитель ОС:', data_string)
+            append_pattern_data(os_name_list, 'Название ОС:', data_string)
+            append_pattern_data(os_code_list, 'Код продукта:', data_string)
+            append_pattern_data(os_type_list, 'Тип системы:', data_string)
+
+    for idx, data in enumerate(os_prod_list):
+        main_data.append(f'{os_prod_list[idx]},{os_name_list[idx]},{os_code_list[idx]},{os_type_list[idx]}')
+
+    return main_data
+
 
 def write_to_csv(file):
     main_data = get_data()
-    csv.writer()
-    pass
+    writer = csv.writer(file)
+    writer.writerows(main_data)
 
 if __name__ == '__main__':
     file_name = 'main_data.csv'
