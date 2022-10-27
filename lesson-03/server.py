@@ -4,7 +4,7 @@ import socket
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
                               DEFAULT_PORT, DEFAULT_IP_ADDRESS)
-from common.utils import get_message, send_message
+from common.utils import get_message, send_message, parse_cmd_parameter
 
 
 def process_client_message(message):
@@ -23,21 +23,11 @@ def process_client_message(message):
     }
 
 
-def parse_cmd_parameter(parameter, default_value, error_message):
-    try:
-        if parameter in sys.argv:
-            result = sys.argv[sys.argv.index(parameter) + 1]
-        else:
-            result = default_value
-
-    except IndexError:
-        print(error_message)
-        sys.exit(1)
-
-    return result
-
-
 def main():
+    """
+    Запускает сервер.
+    Пример: server.py -p 8888 -a 127.0.0.1
+    """
 
     listen_address = parse_cmd_parameter('-a', DEFAULT_IP_ADDRESS, 'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
     listen_port = parse_cmd_parameter('-p', DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')

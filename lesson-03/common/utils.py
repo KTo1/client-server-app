@@ -1,5 +1,20 @@
+import sys
 import json
 from common.variables import MAX_PACKAGE_LENGTH, ENCODING
+
+
+def parse_cmd_parameter(parameter, default_value, error_message):
+    try:
+        if parameter in sys.argv:
+            result = sys.argv[sys.argv.index(parameter) + 1]
+        else:
+            result = default_value
+
+    except IndexError:
+        print(error_message)
+        sys.exit(1)
+
+    return result
 
 
 def send_message(socket, message):
