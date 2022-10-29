@@ -61,7 +61,8 @@ def main():
     transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     transport.connect((server_address, server_port))
     message = create_presence()
-    answer = send_message(transport, message)
+    send_message(transport, message)
+
     try:
         answer = process_answer(get_message(transport))
         print(answer)
