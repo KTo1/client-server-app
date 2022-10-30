@@ -29,8 +29,12 @@ def main():
     Пример: server.py -p 8888 -a 127.0.0.1
     """
 
-    listen_address = parse_cmd_parameter('-a', DEFAULT_IP_ADDRESS, 'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
-    listen_port = parse_cmd_parameter('-p', DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
+    listen_address = parse_cmd_parameter('-a', sys.argv, DEFAULT_IP_ADDRESS, 'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
+    listen_port = parse_cmd_parameter('-p', sys.argv, DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
+
+    if listen_port is None or listen_address is None:
+        print('Неверно заданы параметры командной строки')
+        sys.exit(1)
 
     #process parameter
     try:
