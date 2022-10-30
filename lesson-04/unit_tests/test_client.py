@@ -12,6 +12,9 @@ class TestClient(unittest.TestCase):
     Тест клиента
     """
 
+    def setUp(self) -> None:
+        pass
+
     def test_create_presence_default(self):
         """ Тест приветствия с именем пользователя по умолчанию """
 
@@ -40,5 +43,9 @@ class TestClient(unittest.TestCase):
         """Тест исключения без поля RESPONSE"""
         self.assertRaises(ValueError, process_answer, {ERROR: 'Bad Request'})
 
+    def tearDown(self) -> None:
+        pass
 
+if __name__ == '__main__':
+    unittest.main()
 
