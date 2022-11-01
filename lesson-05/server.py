@@ -5,6 +5,7 @@ import socket
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
                               DEFAULT_PORT, DEFAULT_IP_ADDRESS)
 from common.utils import get_message, send_message, parse_cmd_parameter
+from logs.server_log_config import server_log
 
 
 def process_client_message(message):
@@ -13,6 +14,8 @@ def process_client_message(message):
     сообщение от клиента, проверяет корректность,
     возвращает словарь-ответ для клиента
     """
+
+    server_log.debug(f'Вызов функции "process_client_message", с параметрами: {str(message)}')
 
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
             and USER in message and message[USER][ACCOUNT_NAME] == 'Guest':
@@ -33,7 +36,7 @@ def main():
     listen_port = parse_cmd_parameter('-p', sys.argv, DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
 
     if listen_port is None or listen_address is None:
-        print('Неверно заданы параметры командной строки')
+        server_log.error('Неверно заданы параметры командной строки')
         sys.exit(1)
 
     #process parameter
@@ -42,7 +45,7 @@ def main():
         if listen_port < 1024 or listen_port > 65535:
             raise ValueError
     except ValueError:
-        print('Номер порта может быть указано только в диапазоне от 1024 до 65535.')
+        server_log.exception('Номер порта может быть указано только в диапазоне от 1024 до 65535.')
         sys.exit(1)
 
     transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,7 +54,7 @@ def main():
 
     transport.listen(MAX_CONNECTIONS)
 
-    print(f'Сервер запущен по адресу: {listen_address}: {listen_port}')
+    server_log.info(f'Сервер запущен по адресу: {listen_address}: {listen_port}')
 
     while True:
         client_socket, client_address = transport.accept()
@@ -64,7 +67,7 @@ def main():
             client_socket.close()
 
         except (ValueError, json.JSONDecodeError):
-            print('Принято некорректное сообщение от клиента')
+            server_log.exception('Принято некорректное сообщение от клиента')
             client_socket.close()
 
 

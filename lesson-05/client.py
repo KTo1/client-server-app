@@ -6,6 +6,7 @@ import time
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
                               ACCOUNT_NAME, RESPONSE, ERROR)
 from common.utils import get_message, send_message, parse_cmd_parameter
+from logs.client_log_config import client_log
 
 
 def create_presence(account_name='Guest'):
@@ -14,6 +15,8 @@ def create_presence(account_name='Guest'):
     :param account_name:
     :return:
     """
+
+    client_log.debug(f'Вызов функции "create_presence", с параметрами: {str(account_name)}')
 
     result = {
         ACTION: PRESENCE,
@@ -33,6 +36,8 @@ def process_answer(answer):
     :return:
     '''
 
+    client_log.debug(f'Вызов функции "process_answer", с параметрами: {str(answer)}')
+
     if RESPONSE in answer:
         if answer[RESPONSE] == 200:
             return '200 : OK'
@@ -50,7 +55,7 @@ def main():
     server_port = parse_cmd_parameter('-p', sys.argv, DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
 
     if server_port is None or server_address is None:
-        print('Неверно заданы параметры командной строки')
+        client_log.error('Неверно заданы параметры командной строки')
         sys.exit(1)
 
     #process parameter
@@ -59,11 +64,16 @@ def main():
         if server_port < 1024 or server_port > 65535:
             raise ValueError
     except ValueError:
-        print('Номер порта может быть указано только в диапазоне от 1024 до 65535.')
+        client_log.exception('Номер порта может быть указано только в диапазоне от 1024 до 65535.')
         sys.exit(1)
 
     transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    transport.connect((server_address, server_port))
+    try:
+        transport.connect((server_address, server_port))
+    except ConnectionRefusedError as e:
+        client_log.exception(str(e))
+        sys.exit(1)
+
     message = create_presence()
     send_message(transport, message)
 
@@ -71,7 +81,7 @@ def main():
         answer = process_answer(get_message(transport))
         print(answer)
     except (ValueError, json.JSONDecodeError):
-        print('Не удалось декодировать сообщение сервера.')
+        client_log.exception('Не удалось декодировать сообщение сервера.')
 
 
 if __name__ == '__main__':
