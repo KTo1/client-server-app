@@ -1,10 +1,14 @@
+import os
 import logging
 
 
 server_log = logging.getLogger('app.main')
 formatter = logging.Formatter("<%(asctime)s> <%(levelname)s> <%(module)s> <%(message)s>")
 
-file_hand = logging.FileHandler('server.log', encoding='utf-8')
+file_name = os.path.dirname(os.path.abspath(__file__))
+file_name = os.path.join(file_name, 'server.log')
+
+file_hand = logging.FileHandler(file_name, encoding='utf-8')
 file_hand.setLevel(logging.DEBUG)
 file_hand.setFormatter(formatter)
 
