@@ -2,6 +2,7 @@ import sys
 import json
 import socket
 
+
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
                               DEFAULT_PORT, DEFAULT_IP_ADDRESS)
 from common.utils import get_message, send_message, parse_cmd_parameter

@@ -1,10 +1,10 @@
 import sys
 import json
 from common.variables import MAX_PACKAGE_LENGTH, ENCODING
-from logs.decorators import log
+from logs.decorators import log, Log
 
 
-@log
+@Log()
 def parse_cmd_parameter(parameter, sys_argv, default_value, error_message):
     try:
         if not isinstance(sys_argv, list):
