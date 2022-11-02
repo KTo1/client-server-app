@@ -1,8 +1,10 @@
 import sys
 import json
 from common.variables import MAX_PACKAGE_LENGTH, ENCODING
+from logs.decorators import log
 
 
+@log
 def parse_cmd_parameter(parameter, sys_argv, default_value, error_message):
     try:
         if not isinstance(sys_argv, list):
@@ -22,6 +24,7 @@ def parse_cmd_parameter(parameter, sys_argv, default_value, error_message):
     return result
 
 
+@log
 def send_message(socket, message):
     """
     Отправляет сообщение через сокет
@@ -35,6 +38,7 @@ def send_message(socket, message):
     socket.send(message_bytes)
 
 
+@log
 def get_message(socket):
     """
     Получает сообщение из сокета, возвращает словарь с информацией о сообщении

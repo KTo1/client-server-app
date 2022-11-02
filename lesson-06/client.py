@@ -7,8 +7,10 @@ from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE
                               ACCOUNT_NAME, RESPONSE, ERROR)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.client_log_config import client_log
+from logs.decorators import log
 
 
+@log
 def create_presence(account_name='Guest'):
     """
     Функция генерирует запрос о присутствии клиента

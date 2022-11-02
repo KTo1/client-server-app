@@ -6,8 +6,10 @@ from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTI
                               DEFAULT_PORT, DEFAULT_IP_ADDRESS)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.server_log_config import server_log
+from logs.decorators import log
 
 
+@log
 def process_client_message(message):
     """
     Обработчик сообщений от клиентов, принимает словарь -
