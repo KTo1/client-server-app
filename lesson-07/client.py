@@ -4,7 +4,7 @@ import sys
 import time
 
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
-                              ACCOUNT_NAME, RESPONSE, ERROR)
+                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_MODE, DEFAULT_USER, MESSAGE)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.client_log_config import client_log
 from logs.decorators import log
@@ -23,6 +23,28 @@ def create_presence(account_name='Guest'):
     result = {
         ACTION: PRESENCE,
         TIME: time.time(),
+        USER:{
+            ACCOUNT_NAME:account_name
+        }
+    }
+
+    return result
+
+
+@log
+def create_message(message, account_name='Guest'):
+    """
+    Функция генерирует запрос о присутствии клиента
+    :param account_name:
+    :return:
+    """
+
+    client_log.debug(f'Вызов функции "create_presence", с параметрами: {str(account_name)}')
+
+    result = {
+        ACTION: MESSAGE,
+        TIME: time.time(),
+        MESSAGE: message,
         USER:{
             ACCOUNT_NAME:account_name
         }
@@ -50,11 +72,17 @@ def process_answer(answer):
 def main():
     """
     Запускает клиент.
-    Пример: client.py -p 8888 -a 127.0.0.1
+    -m send - для отправки сообщений
+    -m get - общий чат, где будут приниматься сообщения
+    -u User - имя пользователя
+    Пример: client.py -m send -u Guest -p 8888 -a 127.0.0.1
+    Пример: client.py -m get -u Guest -p 8888 -a 127.0.0.1
     """
 
     server_address = parse_cmd_parameter('-a', sys.argv, DEFAULT_IP_ADDRESS, 'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
     server_port = parse_cmd_parameter('-p', sys.argv, DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
+    run_mode = parse_cmd_parameter('-m', sys.argv, DEFAULT_MODE, 'После параметра -\'m\' необходимо указать режим запуска.')
+    user_name = parse_cmd_parameter('-u', sys.argv, DEFAULT_USER, 'После параметра -\'m\' необходимо указать имя пользователя.')
 
     if server_port is None or server_address is None:
         client_log.error('Неверно заданы параметры командной строки')
@@ -82,8 +110,23 @@ def main():
     try:
         answer = process_answer(get_message(transport))
         print(answer)
+
     except (ValueError, json.JSONDecodeError):
         client_log.exception('Не удалось декодировать сообщение сервера.')
+        sys.exit(1)
+
+    if answer == '200':
+        pass
+
+    while True:
+        msg = input('Введите непустое сообщение: ')
+        if not msg:
+            continue
+
+        if msg == 'exit':
+            break
+
+        send_message(transport, create_message(message))
 
 
 if __name__ == '__main__':

@@ -5,10 +5,13 @@ import socket
 from select import select
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
-                              DEFAULT_PORT, DEFAULT_IP_ADDRESS)
+                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.server_log_config import server_log
 from logs.decorators import log
+
+
+USERS = ['Guest', 'Bazil', 'KTo', 'User']
 
 
 @log
@@ -22,8 +25,13 @@ def process_client_message(message):
     server_log.debug(f'Вызов функции "process_client_message", с параметрами: {str(message)}')
 
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
-            and USER in message and message[USER][ACCOUNT_NAME] == 'Guest':
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
         return {RESPONSE: 200}
+
+    if ACTION in message and message[ACTION] == MESSAGE and TIME in message \
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
+        return {RESPONSE: 201, MESSAGE: message}
+
     return {
         RESPONSE: 400,
         ERROR: 'Bad Request'
@@ -71,19 +79,35 @@ def main():
             clients_sockets.append(client_sock)
         finally:
             wait = 0
-            cl_sock_read, cl_sock_write, cl_sock_err = select(clients_sockets, clients_sockets, clients_sockets,
-                                                                     wait)
+            message_pool = []
+
             for client_socket in clients_sockets:
+                # На мой взгляд логичнее это вынести за цикл, но на виндовс так не работает
+                cl_sock_read, cl_sock_write, _ = select(clients_sockets, clients_sockets, [], wait)
                 try:
                     if client_socket in cl_sock_read:
                         client_message = get_message(client_socket)
                         print(client_message)
                         response = process_client_message(client_message)
-                        send_message(client_socket, response)
+
+                        # Пока так, 200 это приветствие
+                        if response[RESPONSE] == 200 and client_socket in cl_sock_write:
+                            send_message(client_socket, response)
+
+                        # Пока так, 201 это сообщение всем
+                        if response[RESPONSE] == 201:
+                            message_pool.append(response[MESSAGE])
 
                 except (ValueError, json.JSONDecodeError):
                     server_log.exception('Принято некорректное сообщение от клиента')
+                    clients_sockets.remove(client_socket)
                     client_socket.close()
+
+            for message in message_pool:
+                for client_socket in clients_sockets:
+                    _, cl_sock_write, _ = select(_, clients_sockets, [], wait)
+                    if client_socket in cl_sock_write:
+                        pass
 
 
 if __name__ == '__main__':
