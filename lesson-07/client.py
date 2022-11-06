@@ -1,7 +1,7 @@
-import json
-import socket
 import sys
+import json
 import time
+import socket
 
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
                               ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_MODE, DEFAULT_USER, MESSAGE, EXIT)
@@ -149,6 +149,7 @@ def main():
 
             if msg == 'exit':
                 send_message(transport, create_exit_message(user_name))
+                time.sleep(3)
                 break
 
             send_message(transport, create_message(msg, user_name))

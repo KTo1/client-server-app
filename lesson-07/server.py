@@ -115,6 +115,7 @@ def main():
 
             for client_socket in clients_sockets:
                 # На мой взгляд логичнее это вынести за цикл, но на виндовс так не работает
+                cl_sock_read, cl_sock_write = [], []
                 cl_sock_read, cl_sock_write, _ = select(clients_sockets, clients_sockets, [], wait)
                 try:
                     if client_socket in cl_sock_read:
@@ -135,7 +136,6 @@ def main():
                         if response[RESPONSE] == 202 and client_socket in cl_sock_write:
                             clients_sockets.remove(client_socket)
                             client_socket.close()
-                            print(response)
                             exit_message = create_exit_answer(response)
                             message_pool.append(exit_message)
 
