@@ -27,7 +27,7 @@ def process_client_message(message):
 
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
             and USER in message and message[USER][ACCOUNT_NAME] in USERS:
-        return {RESPONSE: 200}
+        return {RESPONSE: 200, MESSAGE: message}
 
     if ACTION in message and message[ACTION] == MESSAGE and TIME in message \
             and USER in message and message[USER][ACCOUNT_NAME] in USERS:
@@ -35,11 +35,20 @@ def process_client_message(message):
 
     if ACTION in message and message[ACTION] == EXIT and TIME in message \
             and USER in message and message[USER][ACCOUNT_NAME] in USERS:
-        return {RESPONSE: 202}
+        return {RESPONSE: 202, MESSAGE: message}
 
     return {
         RESPONSE: 400,
         ERROR: 'Bad Request'
+    }
+
+
+def create_presence_answer(response):
+    return {
+        RESPONSE: 202,
+        TIME: time.time(),
+        USER: response[MESSAGE][USER][ACCOUNT_NAME],
+        MESSAGE: 'enter, and say hi all!'
     }
 
 
@@ -57,7 +66,7 @@ def create_exit_answer(response):
         RESPONSE: 202,
         TIME: time.time(),
         USER: response[MESSAGE][USER][ACCOUNT_NAME],
-        MESSAGE: 'say by!'
+        MESSAGE: 'exit and say by!'
     }
 
 
@@ -116,6 +125,7 @@ def main():
                         # Пока так, 200 это приветствие
                         if response[RESPONSE] == 200 and client_socket in cl_sock_write:
                             send_message(client_socket, response)
+                            message_pool.append(create_presence_answer(response))
 
                         # Пока так, 201 это сообщение всем
                         if response[RESPONSE] == 201:
@@ -125,7 +135,9 @@ def main():
                         if response[RESPONSE] == 202 and client_socket in cl_sock_write:
                             clients_sockets.remove(client_socket)
                             client_socket.close()
-                            message_pool.append(create_exit_answer(response))
+                            print(response)
+                            exit_message = create_exit_answer(response)
+                            message_pool.append(exit_message)
 
                 except (ValueError, json.JSONDecodeError):
                     server_log.exception('Принято некорректное сообщение от клиента')

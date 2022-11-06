@@ -78,7 +78,17 @@ def process_answer(answer):
     if RESPONSE in answer:
         if answer[RESPONSE] == 200:
             return '200 : OK'
+
+        if answer[RESPONSE] == 201:
+            time_string = time.strftime('%d.%m.%Y %H:%M', time.localtime(answer[TIME]))
+            return f'<{time_string}> {answer[USER]}: {answer[MESSAGE]}'
+
+        if answer[RESPONSE] == 202:
+            time_string = time.strftime('%d.%m.%Y %H:%M', time.localtime(answer[TIME]))
+            return f'<{time_string}> {answer[USER]}: {answer[MESSAGE]}'
+
         return f'400 : {answer[ERROR]}'
+
     raise ValueError
 
 
@@ -117,7 +127,7 @@ def main():
         client_log.exception(str(e))
         sys.exit(1)
 
-    message = create_presence()
+    message = create_presence(user_name)
     send_message(transport, message)
 
     try:
@@ -138,14 +148,14 @@ def main():
                 continue
 
             if msg == 'exit':
-                send_message(transport, create_exit_message())
+                send_message(transport, create_exit_message(user_name))
                 break
 
-            send_message(transport, create_message(msg))
+            send_message(transport, create_message(msg, user_name))
 
     if run_mode == 'get':
         while True:
-            answer = get_message(transport)
+            answer = process_answer(get_message(transport))
             print(answer)
 
 
