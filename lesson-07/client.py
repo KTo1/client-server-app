@@ -4,21 +4,19 @@ import sys
 import time
 
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
-                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_MODE, DEFAULT_USER, MESSAGE)
+                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_MODE, DEFAULT_USER, MESSAGE, EXIT)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.client_log_config import client_log
 from logs.decorators import log
 
 
 @log
-def create_presence(account_name='Guest'):
+def create_presence(account_name):
     """
     Функция генерирует запрос о присутствии клиента
     :param account_name:
     :return:
     """
-
-    client_log.debug(f'Вызов функции "create_presence", с параметрами: {str(account_name)}')
 
     result = {
         ACTION: PRESENCE,
@@ -32,14 +30,30 @@ def create_presence(account_name='Guest'):
 
 
 @log
-def create_message(message, account_name='Guest'):
+def create_exit_message(account_name):
     """
     Функция генерирует запрос о присутствии клиента
     :param account_name:
     :return:
     """
 
-    client_log.debug(f'Вызов функции "create_presence", с параметрами: {str(account_name)}')
+    result = {
+        ACTION: EXIT,
+        TIME: time.time(),
+        USER:{
+            ACCOUNT_NAME:account_name
+        }
+    }
+
+    return result
+
+@log
+def create_message(message, account_name):
+    """
+    Функция генерирует запрос о присутствии клиента
+    :param account_name:
+    :return:
+    """
 
     result = {
         ACTION: MESSAGE,
@@ -53,14 +67,13 @@ def create_message(message, account_name='Guest'):
     return result
 
 
+@log
 def process_answer(answer):
     '''
     Функция разбирает ответ сервера
     :param message:
     :return:
     '''
-
-    client_log.debug(f'Вызов функции "process_answer", с параметрами: {str(answer)}')
 
     if RESPONSE in answer:
         if answer[RESPONSE] == 200:
@@ -118,15 +131,22 @@ def main():
     if answer == '200':
         pass
 
-    while True:
-        msg = input('Введите непустое сообщение: ')
-        if not msg:
-            continue
+    if run_mode == 'send':
+        while True:
+            msg = input('Введите непустое сообщение: ')
+            if not msg:
+                continue
 
-        if msg == 'exit':
-            break
+            if msg == 'exit':
+                send_message(transport, create_exit_message())
+                break
 
-        send_message(transport, create_message(message))
+            send_message(transport, create_message(msg))
+
+    if run_mode == 'get':
+        while True:
+            answer = get_message(transport)
+            print(answer)
 
 
 if __name__ == '__main__':

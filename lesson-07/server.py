@@ -1,11 +1,12 @@
 import sys
 import json
+import time
 import socket
 
 from select import select
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
-                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE)
+                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE, EXIT)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.server_log_config import server_log
 from logs.decorators import log
@@ -32,9 +33,31 @@ def process_client_message(message):
             and USER in message and message[USER][ACCOUNT_NAME] in USERS:
         return {RESPONSE: 201, MESSAGE: message}
 
+    if ACTION in message and message[ACTION] == EXIT and TIME in message \
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
+        return {RESPONSE: 202}
+
     return {
         RESPONSE: 400,
         ERROR: 'Bad Request'
+    }
+
+
+def create_answer(response):
+    return {
+        RESPONSE: 201,
+        TIME: time.time(),
+        USER: response[MESSAGE][USER][ACCOUNT_NAME],
+        MESSAGE: response[MESSAGE][MESSAGE]
+    }
+
+
+def create_exit_answer(response):
+    return {
+        RESPONSE: 202,
+        TIME: time.time(),
+        USER: response[MESSAGE][USER][ACCOUNT_NAME],
+        MESSAGE: 'say by!'
     }
 
 
@@ -96,7 +119,13 @@ def main():
 
                         # Пока так, 201 это сообщение всем
                         if response[RESPONSE] == 201:
-                            message_pool.append(response[MESSAGE])
+                            message_pool.append(create_answer(response))
+
+                        # Пока так, 202 это выход
+                        if response[RESPONSE] == 202 and client_socket in cl_sock_write:
+                            clients_sockets.remove(client_socket)
+                            client_socket.close()
+                            message_pool.append(create_exit_answer(response))
 
                 except (ValueError, json.JSONDecodeError):
                     server_log.exception('Принято некорректное сообщение от клиента')
@@ -107,7 +136,7 @@ def main():
                 for client_socket in clients_sockets:
                     _, cl_sock_write, _ = select(_, clients_sockets, [], wait)
                     if client_socket in cl_sock_write:
-                        pass
+                        send_message(client_socket, message)
 
 
 if __name__ == '__main__':
