@@ -2,6 +2,7 @@ import sys
 import json
 import socket
 
+from select import select
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
                               DEFAULT_PORT, DEFAULT_IP_ADDRESS)
@@ -56,22 +57,33 @@ def main():
     transport.bind((listen_address, listen_port))
 
     transport.listen(MAX_CONNECTIONS)
+    transport.settimeout(1)
 
+    clients_sockets = []
     server_log.info(f'Сервер запущен по адресу: {listen_address}: {listen_port}')
 
     while True:
-        client_socket, client_address = transport.accept()
         try:
-            client_message = get_message(client_socket)
-            print(client_message)
-            response = process_client_message(client_message)
-            send_message(client_socket, response)
+            client_sock, client_address = transport.accept()
+        except OSError as e:
+            print(str(e))
+        else:
+            clients_sockets.append(client_sock)
+        finally:
+            wait = 0
+            cl_sock_read, cl_sock_write, cl_sock_err = select(clients_sockets, clients_sockets, clients_sockets,
+                                                                     wait)
+            for client_socket in clients_sockets:
+                try:
+                    if client_socket in cl_sock_read:
+                        client_message = get_message(client_socket)
+                        print(client_message)
+                        response = process_client_message(client_message)
+                        send_message(client_socket, response)
 
-            client_socket.close()
-
-        except (ValueError, json.JSONDecodeError):
-            server_log.exception('Принято некорректное сообщение от клиента')
-            client_socket.close()
+                except (ValueError, json.JSONDecodeError):
+                    server_log.exception('Принято некорректное сообщение от клиента')
+                    client_socket.close()
 
 
 if __name__ == '__main__':
