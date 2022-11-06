@@ -143,7 +143,7 @@ def main():
 
     if run_mode == 'send':
         while True:
-            msg = input('Введите непустое сообщение: ')
+            msg = input(f'<{user_name}> Введите непустое сообщение (exit для выхода): ')
             if not msg:
                 continue
 
