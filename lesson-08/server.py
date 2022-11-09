@@ -44,8 +44,14 @@ def process_client_message(message):
 
 
 def create_presence_answer(response):
+    """
+    Генерирует ответ на приветствие
+    :param response:
+    :return:
+    """
+
     return {
-        RESPONSE: 202,
+        RESPONSE: 200,
         TIME: time.time(),
         USER: response[MESSAGE][USER][ACCOUNT_NAME],
         MESSAGE: 'enter, and say hi all!'
@@ -53,6 +59,12 @@ def create_presence_answer(response):
 
 
 def create_answer(response):
+    """
+    Генерирует сообщение всем
+    :param response:
+    :return:
+    """
+
     return {
         RESPONSE: 201,
         TIME: time.time(),
@@ -62,6 +74,12 @@ def create_answer(response):
 
 
 def create_exit_answer(response):
+    """
+    Генерирует сообщение выхода
+    :param response:
+    :return:
+    """
+
     return {
         RESPONSE: 202,
         TIME: time.time(),
@@ -83,7 +101,7 @@ def main():
         server_log.error('Неверно заданы параметры командной строки')
         sys.exit(1)
 
-    #process parameter
+    # process parameter
     try:
         listen_port = int(listen_port)
         if listen_port < 1024 or listen_port > 65535:
@@ -146,7 +164,7 @@ def main():
 
             for message in message_pool:
                 for client_socket in clients_sockets:
-                    _, cl_sock_write, _ = select(_, clients_sockets, [], wait)
+                    _, cl_sock_write, _ = select([], clients_sockets, [], wait)
                     if client_socket in cl_sock_write:
                         send_message(client_socket, message)
 

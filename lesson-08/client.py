@@ -21,8 +21,8 @@ def create_presence(account_name):
     result = {
         ACTION: PRESENCE,
         TIME: time.time(),
-        USER:{
-            ACCOUNT_NAME:account_name
+        USER: {
+            ACCOUNT_NAME: account_name
         }
     }
 
@@ -32,7 +32,7 @@ def create_presence(account_name):
 @log
 def create_exit_message(account_name):
     """
-    Функция генерирует запрос о присутствии клиента
+    Функция генерирует запрос о выходе клиента
     :param account_name:
     :return:
     """
@@ -40,17 +40,19 @@ def create_exit_message(account_name):
     result = {
         ACTION: EXIT,
         TIME: time.time(),
-        USER:{
-            ACCOUNT_NAME:account_name
+        USER: {
+            ACCOUNT_NAME: account_name
         }
     }
 
     return result
 
+
 @log
 def create_message(message, account_name):
     """
-    Функция генерирует запрос о присутствии клиента
+    Функция генерирует запрос о сообщении клиента
+    :param message:
     :param account_name:
     :return:
     """
@@ -59,8 +61,8 @@ def create_message(message, account_name):
         ACTION: MESSAGE,
         TIME: time.time(),
         MESSAGE: message,
-        USER:{
-            ACCOUNT_NAME:account_name
+        USER: {
+            ACCOUNT_NAME: account_name
         }
     }
 
@@ -69,11 +71,11 @@ def create_message(message, account_name):
 
 @log
 def process_answer(answer):
-    '''
+    """
     Функция разбирает ответ сервера
-    :param message:
+    :param answer:
     :return:
-    '''
+    """
 
     if RESPONSE in answer:
         if answer[RESPONSE] == 200:
@@ -111,7 +113,7 @@ def main():
         client_log.error('Неверно заданы параметры командной строки')
         sys.exit(1)
 
-    #process parameter
+    # process parameter
     try:
         server_port = int(server_port)
         if server_port < 1024 or server_port > 65535:
