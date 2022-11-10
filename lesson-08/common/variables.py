@@ -4,8 +4,6 @@
 DEFAULT_PORT = 8888
 # IP адрес по умолчанию
 DEFAULT_IP_ADDRESS = '127.0.0.1'
-# режим запуска по умолчанию
-DEFAULT_MODE = 'send'
 # имя пользователя по умолчанию
 DEFAULT_USER = 'Guest'
 # Максимальная очередь подключений
@@ -22,6 +20,8 @@ USER = 'user'
 ACCOUNT_NAME = 'account_name'
 
 # Прочие ключи, используемые в протоколе
+USERNAME_SERVER = 'server'
+TO_USERNAME = 'to_username'
 PRESENCE = 'presence'
 MESSAGE = 'message'
 RESPONSE = 'response'

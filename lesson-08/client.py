@@ -2,9 +2,10 @@ import sys
 import json
 import time
 import socket
+import threading
 
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
-                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_MODE, DEFAULT_USER, MESSAGE, EXIT)
+                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_USER, MESSAGE, EXIT, TO_USERNAME)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.client_log_config import client_log
 from logs.decorators import log
@@ -49,7 +50,7 @@ def create_exit_message(account_name):
 
 
 @log
-def create_message(message, account_name):
+def create_message(message, account_name, to_username):
     """
     Функция генерирует запрос о сообщении клиента
     :param message:
@@ -61,6 +62,7 @@ def create_message(message, account_name):
         ACTION: MESSAGE,
         TIME: time.time(),
         MESSAGE: message,
+        TO_USERNAME: to_username,
         USER: {
             ACCOUNT_NAME: account_name
         }
@@ -94,20 +96,65 @@ def process_answer(answer):
     raise ValueError
 
 
+def print_help():
+    help_string = 'Справка по командам:\n'
+    help_string += '/help - эта справка\n'
+    help_string += '/online - кто онлайн?\n'
+    help_string += '/exit - выход\n'
+    help_string += '/имя_пользователя сообщение - сообщение пользователю\n'
+
+    print(help_string)
+
+
+def get_username_from_msg(command):
+    if not command or not isinstance(command, str):
+        return None
+
+    # return command.split()[0].replace('/', '')
+    # оставил с / чтобы удобно было копировать
+    return command.split()[0].replace('/', '')
+
+def send_messages(transport, user_name):
+    while True:
+        msg = input(f'<{user_name}> Введите непустое сообщение (/help - помощь): ')
+        if not msg:
+            continue
+
+        if msg == '/exit' or msg == '.учше':
+            send_message(transport, create_exit_message(user_name))
+            print('Bye!')
+            time.sleep(2)
+            break
+
+        if msg == '/help' or msg == '.рудз':
+            print_help()
+            continue
+
+        if msg == '/online' or msg == '.щтдшту':
+            pass
+
+        to_username = get_username_from_msg(msg)
+
+        if to_username and not to_username == user_name:
+            send_message(transport, create_message(msg.replace(to_username, ''), user_name, to_username))
+
+
+def recv_messages(transport):
+    while True:
+        answer = process_answer(get_message(transport))
+        print(answer)
+
 def main():
     """
     Запускает клиент.
-    -m send - для отправки сообщений
-    -m get - общий чат, где будут приниматься сообщения
     -u User - имя пользователя
-    Пример: client.py -m send -u Guest -p 8888 -a 127.0.0.1
-    Пример: client.py -m get -u Guest -p 8888 -a 127.0.0.1
+    Пример: client.py -u Guest -p 8888 -a 127.0.0.1
+    Пример: client.py -u Guest -p 8888 -a 127.0.0.1
     """
 
     server_address = parse_cmd_parameter('-a', sys.argv, DEFAULT_IP_ADDRESS, 'После параметра \'a\'- необходимо указать адрес, который будет слушать сервер.')
     server_port = parse_cmd_parameter('-p', sys.argv, DEFAULT_PORT, 'После параметра -\'p\' необходимо указать номер порта.')
-    run_mode = parse_cmd_parameter('-m', sys.argv, DEFAULT_MODE, 'После параметра -\'m\' необходимо указать режим запуска.')
-    user_name = parse_cmd_parameter('-u', sys.argv, DEFAULT_USER, 'После параметра -\'m\' необходимо указать имя пользователя.')
+    user_name = parse_cmd_parameter('-u', sys.argv, DEFAULT_USER, 'После параметра -\'u\' необходимо указать имя пользователя.')
 
     if server_port is None or server_address is None:
         client_log.error('Неверно заданы параметры командной строки')
@@ -143,23 +190,20 @@ def main():
     if answer == '200':
         pass
 
-    if run_mode == 'send':
-        while True:
-            msg = input(f'<{user_name}> Введите непустое сообщение (exit для выхода): ')
-            if not msg:
-                continue
+    sender = threading.Thread(target=send_messages, args=(transport, user_name))
+    receiver = threading.Thread(target=recv_messages, args=(transport,))
 
-            if msg == 'exit':
-                send_message(transport, create_exit_message(user_name))
-                time.sleep(3)
-                break
+    sender.daemon = True
+    receiver.daemon = True
 
-            send_message(transport, create_message(msg, user_name))
+    sender.start()
+    receiver.start()
 
-    if run_mode == 'get':
-        while True:
-            answer = process_answer(get_message(transport))
-            print(answer)
+    while True:
+        time.sleep(1)
+        if sender.is_alive() and receiver.is_alive():
+            continue
+        break
 
 
 if __name__ == '__main__':

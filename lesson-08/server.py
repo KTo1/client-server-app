@@ -6,13 +6,14 @@ import socket
 from select import select
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
-                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE, EXIT)
+                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE, EXIT, TO_USERNAME, USERNAME_SERVER)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.server_log_config import server_log
 from logs.decorators import log
 
 
 USERS = ['Guest', 'Bazil', 'KTo', 'User']
+USERS_ONLINE = {}
 
 
 @log
@@ -58,9 +59,24 @@ def create_presence_answer(response):
     }
 
 
+def create_no_user_answer():
+    """
+    Генерирует сообщение пользователь не найден
+    :param response:
+    :return:
+    """
+
+    return {
+        RESPONSE: 201,
+        TIME: time.time(),
+        USER: USERNAME_SERVER,
+        MESSAGE: 'Пользователь не найден, возможно он не в сети, или вы ошиблись в имени.'
+    }
+
+
 def create_answer(response):
     """
-    Генерирует сообщение всем
+    Генерирует сообщение пользователю
     :param response:
     :return:
     """
@@ -86,6 +102,18 @@ def create_exit_answer(response):
         USER: response[MESSAGE][USER][ACCOUNT_NAME],
         MESSAGE: 'exit and say by!'
     }
+
+
+def register_user_online(user, socket):
+    USERS_ONLINE[user] = socket
+
+
+def unregister_user_online(user):
+    del USERS_ONLINE[user]
+
+
+def get_socket_on_username(to_username):
+    return USERS_ONLINE.get(to_username)
 
 
 def main():
@@ -144,18 +172,22 @@ def main():
                         # Пока так, 200 это приветствие
                         if response[RESPONSE] == 200 and client_socket in cl_sock_write:
                             send_message(client_socket, response)
-                            message_pool.append(create_presence_answer(response))
+                            register_user_online(response[MESSAGE][USER][ACCOUNT_NAME], client_socket)
 
-                        # Пока так, 201 это сообщение всем
+                        # Пока так, 201 это сообщение
                         if response[RESPONSE] == 201:
-                            message_pool.append(create_answer(response))
+                            user_socket = get_socket_on_username(response[MESSAGE][TO_USERNAME])
+                            if user_socket:
+                                message_pool.append((user_socket, create_answer(response)))
+                            else:
+                                message_pool.append((client_socket, create_no_user_answer()))
 
                         # Пока так, 202 это выход
                         if response[RESPONSE] == 202 and client_socket in cl_sock_write:
                             clients_sockets.remove(client_socket)
                             client_socket.close()
-                            exit_message = create_exit_answer(response)
-                            message_pool.append(exit_message)
+                            unregister_user_online(response[MESSAGE][USER][ACCOUNT_NAME])
+
 
                 except (ValueError, json.JSONDecodeError):
                     server_log.exception('Принято некорректное сообщение от клиента')
@@ -163,10 +195,13 @@ def main():
                     client_socket.close()
 
             for message in message_pool:
-                for client_socket in clients_sockets:
-                    _, cl_sock_write, _ = select([], clients_sockets, [], wait)
-                    if client_socket in cl_sock_write:
-                        send_message(client_socket, message)
+                _, cl_sock_write, _ = select([], clients_sockets, [], wait)
+
+                client_socket = message[0]
+                message_send = message[1]
+
+                if client_socket in cl_sock_write:
+                    send_message(client_socket, message_send)
 
 
 if __name__ == '__main__':
