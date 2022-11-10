@@ -122,7 +122,7 @@ def send_messages(transport, user_name):
         if msg == '/exit' or msg == '.учше':
             send_message(transport, create_exit_message(user_name))
             print('Bye!')
-            time.sleep(2)
+            time.sleep(3)
             break
 
         if msg == '/help' or msg == '.рудз':

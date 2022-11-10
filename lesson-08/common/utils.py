@@ -49,6 +49,8 @@ def get_message(socket):
     if isinstance(message_bytes, bytes):
         json_string = message_bytes.decode(ENCODING)
         if isinstance(json_string, str):
+            if not json_string:
+                return {}
             message = json.loads(json_string)
             if isinstance(message, dict):
                 return message
