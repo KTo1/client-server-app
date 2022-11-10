@@ -81,6 +81,9 @@ def process_answer(answer):
     :return:
     """
 
+    if not answer:
+        return ''
+
     if RESPONSE in answer:
         if answer[RESPONSE] == 200:
             return '200 : OK'
@@ -122,7 +125,7 @@ def send_messages(transport, user_name):
         if msg == '/exit' or msg == '.учше':
             send_message(transport, create_exit_message(user_name))
             print('Bye!')
-            time.sleep(3)
+            time.sleep(2)
             break
 
         if msg == '/help' or msg == '.рудз':
@@ -142,9 +145,10 @@ def send_messages(transport, user_name):
 def recv_messages(transport):
     while True:
         answer = process_answer(get_message(transport))
-        print()
-        print('Сообщение от сервера: ')
-        print(answer)
+        if answer:
+            print()
+            print('Сообщение от сервера: ')
+            print(answer)
 
 
 def main():
