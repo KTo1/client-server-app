@@ -5,10 +5,33 @@ import socket
 import threading
 
 from common.variables import (DEFAULT_PORT, DEFAULT_IP_ADDRESS, ACTION, PRESENCE, TIME, USER,
-                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_USER, MESSAGE, EXIT, TO_USERNAME)
+                              ACCOUNT_NAME, RESPONSE, ERROR, DEFAULT_USER, MESSAGE, EXIT, TO_USERNAME, USERS_ONLINE)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.client_log_config import client_log
 from logs.decorators import log
+
+
+def create_common_message(account_name, action):
+    result = {
+        ACTION: action,
+        TIME: time.time(),
+        USER: {
+            ACCOUNT_NAME: account_name
+        }
+    }
+
+    return result
+
+
+@log
+def create_online_request(account_name):
+    """
+    Функция генерирует запрос о пользователях онлайн
+    :param account_name:
+    :return:
+    """
+
+    return create_common_message(account_name, USERS_ONLINE)
 
 
 @log
@@ -19,15 +42,7 @@ def create_presence(account_name):
     :return:
     """
 
-    result = {
-        ACTION: PRESENCE,
-        TIME: time.time(),
-        USER: {
-            ACCOUNT_NAME: account_name
-        }
-    }
-
-    return result
+    return create_common_message(account_name, PRESENCE)
 
 
 @log
@@ -38,15 +53,7 @@ def create_exit_message(account_name):
     :return:
     """
 
-    result = {
-        ACTION: EXIT,
-        TIME: time.time(),
-        USER: {
-            ACCOUNT_NAME: account_name
-        }
-    }
-
-    return result
+    return create_common_message(account_name, EXIT)
 
 
 @log
@@ -55,18 +62,13 @@ def create_message(message, account_name, to_username):
     Функция генерирует запрос о сообщении клиента
     :param message:
     :param account_name:
+    :param to_username:
     :return:
     """
 
-    result = {
-        ACTION: MESSAGE,
-        TIME: time.time(),
-        MESSAGE: message,
-        TO_USERNAME: to_username,
-        USER: {
-            ACCOUNT_NAME: account_name
-        }
-    }
+    result = create_common_message(account_name, MESSAGE)
+    result[MESSAGE] = message
+    result[TO_USERNAME] = to_username
 
     return result
 
@@ -83,11 +85,7 @@ def process_answer(answer):
         if answer[RESPONSE] == 200:
             return '200 : OK'
 
-        if answer[RESPONSE] == 201:
-            time_string = time.strftime('%d.%m.%Y %H:%M', time.localtime(answer[TIME]))
-            return f'<{time_string}> {answer[USER]}: {answer[MESSAGE]}'
-
-        if answer[RESPONSE] == 202:
+        if answer[RESPONSE] == 201 or answer[RESPONSE] == 202 or answer[RESPONSE] == 203:
             time_string = time.strftime('%d.%m.%Y %H:%M', time.localtime(answer[TIME]))
             return f'<{time_string}> {answer[USER]}: {answer[MESSAGE]}'
 
@@ -112,7 +110,8 @@ def get_username_from_msg(command):
 
     # return command.split()[0].replace('/', '')
     # оставил с / чтобы удобно было копировать
-    return command.split()[0].replace('/', '')
+    return command.split()[0]
+
 
 def send_messages(transport, user_name):
     while True:
@@ -131,7 +130,8 @@ def send_messages(transport, user_name):
             continue
 
         if msg == '/online' or msg == '.щтдшту':
-            pass
+            send_message(transport, create_online_request(user_name))
+            continue
 
         to_username = get_username_from_msg(msg)
 
@@ -142,7 +142,10 @@ def send_messages(transport, user_name):
 def recv_messages(transport):
     while True:
         answer = process_answer(get_message(transport))
+        print()
+        print('Сообщение от сервера: ')
         print(answer)
+
 
 def main():
     """

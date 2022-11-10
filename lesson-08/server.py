@@ -6,14 +6,15 @@ import socket
 from select import select
 
 from common.variables import (MAX_CONNECTIONS, RESPONSE, ERROR, TIME, USER, ACTION, ACCOUNT_NAME, PRESENCE,
-                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE, EXIT, TO_USERNAME, USERNAME_SERVER)
+                              DEFAULT_PORT, DEFAULT_IP_ADDRESS, MESSAGE, EXIT, TO_USERNAME, USERNAME_SERVER,
+                              USERS_ONLINE)
 from common.utils import get_message, send_message, parse_cmd_parameter
 from logs.server_log_config import server_log
 from logs.decorators import log
 
 
-USERS = ['Guest', 'Bazil', 'KTo', 'User']
-USERS_ONLINE = {}
+USERS_DB = ['Guest', 'Bazil', 'KTo', 'User']
+USERS_ONLINE_DB = {}
 
 
 @log
@@ -27,16 +28,20 @@ def process_client_message(message):
     server_log.debug(f'Вызов функции "process_client_message", с параметрами: {str(message)}')
 
     if ACTION in message and message[ACTION] == PRESENCE and TIME in message \
-            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS_DB:
         return {RESPONSE: 200, MESSAGE: message}
 
     if ACTION in message and message[ACTION] == MESSAGE and TIME in message \
-            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS_DB:
         return {RESPONSE: 201, MESSAGE: message}
 
     if ACTION in message and message[ACTION] == EXIT and TIME in message \
-            and USER in message and message[USER][ACCOUNT_NAME] in USERS:
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS_DB:
         return {RESPONSE: 202, MESSAGE: message}
+
+    if ACTION in message and message[ACTION] == USERS_ONLINE and TIME in message \
+            and USER in message and message[USER][ACCOUNT_NAME] in USERS_DB:
+        return {RESPONSE: 203, MESSAGE: message}
 
     return {
         RESPONSE: 400,
@@ -44,6 +49,7 @@ def process_client_message(message):
     }
 
 
+@log
 def create_presence_answer(response):
     """
     Генерирует ответ на приветствие
@@ -59,6 +65,7 @@ def create_presence_answer(response):
     }
 
 
+@log
 def create_no_user_answer():
     """
     Генерирует сообщение пользователь не найден
@@ -74,6 +81,26 @@ def create_no_user_answer():
     }
 
 
+@log
+def create_user_online_answer():
+    """
+    Генерирует сообщение пользователи онлайн
+    :param response:
+    :return:
+    """
+
+    message = 'Список пользователей онлайн: \n'
+    message += '\n'.join(['/' + user for user in USERS_ONLINE_DB])
+
+    return {
+        RESPONSE: 203,
+        TIME: time.time(),
+        USER: USERNAME_SERVER,
+        MESSAGE: message
+    }
+
+
+@log
 def create_answer(response):
     """
     Генерирует сообщение пользователю
@@ -89,6 +116,7 @@ def create_answer(response):
     }
 
 
+@log
 def create_exit_answer(response):
     """
     Генерирует сообщение выхода
@@ -104,16 +132,17 @@ def create_exit_answer(response):
     }
 
 
+@log
 def register_user_online(user, socket):
-    USERS_ONLINE[user] = socket
+    USERS_ONLINE_DB[user] = socket
 
 
 def unregister_user_online(user):
-    del USERS_ONLINE[user]
+    del USERS_ONLINE_DB[user]
 
 
 def get_socket_on_username(to_username):
-    return USERS_ONLINE.get(to_username)
+    return USERS_ONLINE_DB.get(to_username.replace('/', ''))
 
 
 def main():
@@ -188,6 +217,9 @@ def main():
                             client_socket.close()
                             unregister_user_online(response[MESSAGE][USER][ACCOUNT_NAME])
 
+                        # Пока так, 203 это запрос пользователей онлайн
+                        if response[RESPONSE] == 203 and client_socket in cl_sock_write:
+                            message_pool.append((client_socket, create_user_online_answer()))
 
                 except (ValueError, json.JSONDecodeError):
                     server_log.exception('Принято некорректное сообщение от клиента')

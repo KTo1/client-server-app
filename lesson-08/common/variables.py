@@ -20,6 +20,7 @@ USER = 'user'
 ACCOUNT_NAME = 'account_name'
 
 # Прочие ключи, используемые в протоколе
+USERS_ONLINE = 'users_online'
 USERNAME_SERVER = 'server'
 TO_USERNAME = 'to_username'
 PRESENCE = 'presence'
